@@ -15,19 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with mapGen.  If not, see <http://www.gnu.org/licenses/>.
 
+// Include guard
 #ifndef PIXEL_DATA_HPP
 #define PIXEL_DATA_HPP
 
+// Standard C++ includes
 #include <string>
 #include <vector>
 
+// Standard C includes
 #include <cstdint>
 
+// Library includes
 #include <png.h>
 
 class pixelData {
     std::vector<png_byte> pixelArray;
-    std::string name;
     
     uint32_t width;
     uint32_t height;
@@ -49,12 +52,12 @@ class pixelData {
     uint16_t getWidth() const;
     uint16_t getHeight() const;
 
-    void writeImage();
+    void writeImage( const std::string & );
 
-    png_bytep raw();
+    png_byte& at( uint32_t);
 
     // Constructor/Destructor
-    pixelData( uint32_t width, uint32_t height, png_byte bDepth, png_byte clrType, const std::string &title );
+    pixelData( uint32_t width, uint32_t height, png_byte bDepth, png_byte clrType );
     ~pixelData();
 };
 #endif

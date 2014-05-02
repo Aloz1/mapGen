@@ -28,17 +28,18 @@
 
 using namespace std;
 
-pixelData::pixelData( uint32_t wdth, uint32_t hght, png_byte bDepth, png_byte clrType, const string &title ):
+pixelData::pixelData( uint32_t wdth, uint32_t hght, png_byte bDepth, png_byte clrType ):
     width( wdth ),
     height( hght ),
-    name( title ),
-    pixelArray( wdth * hght),
-
     bitDepth( bDepth ),
     colourType( clrType ),
     png_ptr( png_create_write_struct( PNG_LIBPNG_VER_STRING, 0, 0, 0) ),
     info_ptr( png_create_info_struct( png_ptr ) )
 {
+    // Create array, if array is colour, make it 3 times larger
+    if( clrType == PNG_COLOR_TYPE_GRAY ) pixelArray.resize( wdth * hght );
+    else if( clrType == PNG_COLOR_TYPE_RGB ) pixelArray.resize( wdth * hght * 3 );
+    else throw runtime_error( "Unknown colour type" );
 }
 
 pixelData::~pixelData() {
@@ -80,13 +81,13 @@ uint16_t pixelData::getHeight() const {
     return height;
 }
 
-png_bytep pixelData::raw() {
-    return pixelArray.data();
+png_byte& pixelData::at( uint32_t i ) {
+    return pixelArray.at( i );
 }
 
-void pixelData::writeImage() {
+void pixelData::writeImage( const string &name ) {
     // Create C usable variables for image
-    png_bytep rowPointer = raw();
+    png_bytep rowPointer = pixelArray.data();
 
     // Generate file name
     string fileName = name + ".png";

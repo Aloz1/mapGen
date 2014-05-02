@@ -15,31 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with mapGen.  If not, see <http://www.gnu.org/licenses/>.
 
+// Include guard
 #ifndef MAP_GENERATOR_HPP
 #define MAP_GENERATOR_HPP
 
+// Standard C++ includes
 #include <string>
+
+// Standard C includes
 #include <cstdint>
+
+// Definition includes
 #include "pixelData.hpp"
+#include "heightNode.hpp"
 
 // Class Definitions
 class mapGenerator {
     // Variables
     unsigned int size;
-    
+    pixelData *heightMap, *colourMap;
 
   public:
-    // Variables
-    pixelData pixel;
-
     // Functions
     uint8_t getSize();
-    void dsGenerate( int randomFactor, int seed = 0 );
-    int writeImage();
-    void convColour();
+    void dsGenHeight( int randomFactor, int seed = 0 );
+    void simplexGenHeight( int randomFactor, int seed = 0 );
+    void convColour( std::vector<biomeNode> &biomes );
+    void writeImage( const std::string &name );
+    void writeImage( const std::string &heightName, const std::string &colourName );
     
     // Constructor/Destructor
-    mapGenerator( uint8_t size, png_byte bDepth, png_byte clrType, const std::string &outName );
+    mapGenerator( uint8_t size, png_byte bDepth, png_byte clrType );
     ~mapGenerator();
 };
 #endif

@@ -23,9 +23,7 @@
 #include <stdexcept>
 
 // Standard C includes
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
+//#include <cstdlib>
 #include <cstdint>
 #include <cmath>
 
@@ -34,62 +32,38 @@
 
 // Definition includes
 #include "mapGenerate.hpp"
+#include "heightNode.hpp"
+
+// Prototypes
+void setHeights( std::vector<biomeNode> & );
 
 // Namespace Definitions
 namespace {
     uint8_t size = 10;
     uint8_t randomFactor = 255;
-    float water = 0.9;
+    std::vector<biomeNode> heights;
 }
 
 using namespace std;
 
 // Main Function
 int main( int argc, char *argv[] ) {
+
     try {
+        // Set biomes
+        setHeights( heights );
+
         // Create image
-        mapGenerator map( size, 8, PNG_COLOR_TYPE_GRAY, "file" );
+        mapGenerator map( size, 8, PNG_COLOR_TYPE_GRAY );
         
         // Generate Image
-        map.dsGenerate( randomFactor );
+        map.dsGenHeight( randomFactor );
         
         // Colour map
-        unsigned int totalSize = map.pixel.getWidth() * map.pixel.getHeight();
-        vector<unsigned int> counter( 256, 0 );
-        unsigned int countSize;
-        unsigned int waterHeight = 0;
-
-        for( unsigned int i = 0; i < totalSize; i++ ) {
-            ++counter[ map.pixel.raw()[i] ];
-        }
-
-        if( water > 0.5 ){
-            uint32_t i, waterTotal = 0;
-            countSize = ( 1 - water ) * totalSize; 
-            for( i = 255;  waterTotal <= countSize; i-- ) {
-                waterTotal += counter[i];
-            }
-            waterHeight = i + 1;
-        }
-        else {
-            uint32_t i, waterTotal = 0;
-            countSize = water * totalSize; 
-            for( i = 0;  waterTotal <= countSize; i++ ) {
-                waterTotal += counter[i];
-                cout << i << " " << waterTotal << " " << counter[i] << endl;
-            }
-            waterHeight = i - 1;
-        }
-        
-        for( unsigned int i; i < totalSize; i++ ) {
-            if( map.pixel.raw()[i] <= waterHeight ) {
-                map.pixel.raw()[i] = 0;
-            }
-        }
-
+        //map.convColour( heights );
         
         // Write image
-        map.pixel.writeImage();
+        map.writeImage( "heightMap" );
         
         return 0;
     }
@@ -103,11 +77,12 @@ int main( int argc, char *argv[] ) {
     }
 }
 
-
-
-// While the length of the side of the squares is greater than zero {
-//     Pass through the array and perform the diamond step for each square present.
-//     Pass through the array and perform the square step for each diamond present.
-//     Reduce the random number range.
-// }
-
+void setHeights( std::vector<biomeNode> &height ) {
+    height.resize( 3 );
+    height.at( 0 ).height = 0.4;
+    height.at( 0 ).blue = 255;
+    height.at( 1 ).height = 0.7;
+    height.at( 1 ).red = 255;
+    height.at( 2 ).height = 0.9;
+    height.at( 2 ).green = 255;
+}
