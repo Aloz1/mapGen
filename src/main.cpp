@@ -60,10 +60,10 @@ int main( int argc, char *argv[] ) {
         map.dsGenHeight( randomFactor );
         
         // Colour map
-        //map.convColour( heights );
+        map.convColour( heights );
         
         // Write image
-        map.writeImage( "heightMap" );
+        map.writeImage( "heightMap", "colourMap" );
         
         return 0;
     }
@@ -79,10 +79,15 @@ int main( int argc, char *argv[] ) {
 
 void setHeights( std::vector<biomeNode> &height ) {
     height.resize( 3 );
-    height.at( 0 ).height = 0.4;
+    // Ocean
+    height.at( 0 ).height = 0.7;
     height.at( 0 ).blue = 255;
-    height.at( 1 ).height = 0.7;
-    height.at( 1 ).red = 255;
+    //Earth
+    height.at( 1 ).height = 0.99;
+    height.at( 1 ).green = 255;
+    //Snow
     height.at( 2 ).height = 0.9;
+    height.at( 2 ).red = 255;
     height.at( 2 ).green = 255;
+    height.at( 2 ).blue = 255;
 }

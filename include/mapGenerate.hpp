@@ -40,7 +40,7 @@ class mapGenerator {
     uint8_t getSize();
     void dsGenHeight( int randomFactor, int seed = 0 );
     void simplexGenHeight( int randomFactor, int seed = 0 );
-    void convColour( std::vector<biomeNode> &biomes );
+    void convColour( std::vector<biomeNode> &biomes, float shadingFactor = 1.0 );
     void writeImage( const std::string &name );
     void writeImage( const std::string &heightName, const std::string &colourName );
     

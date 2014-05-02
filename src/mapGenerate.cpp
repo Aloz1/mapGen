@@ -134,18 +134,19 @@ void mapGenerator::dsGenHeight( int randomFactor, int seed ) {
     }
 }
 
-void mapGenerator::convColour( vector<biomeNode> &biomes ) {
-    if( colourMap == nullptr )
-        colourMap = new pixelData(
-                heightMap->getWidth(), heightMap->getHeight(),
-                8, PNG_COLOR_TYPE_RGB
-        );
-
+void mapGenerator::convColour( vector<biomeNode> &biomes, float shadingFactor ) {
     unsigned int pixelsTotal = heightMap->getWidth() * heightMap->getHeight();
     unsigned int biomeCount = biomes.size();
     unsigned int biomeHeight = 0;
     unsigned int prevHeight = 0;
     vector<unsigned int> counter( 256, 0 ); // Container to count pixels
+
+    if( colourMap == nullptr )
+        colourMap = new pixelData(
+                heightMap->getWidth(), heightMap->getHeight(),
+                8, PNG_COLOR_TYPE_RGB
+        );
+    if( shadingFactor > 1.0 ) shadingFactor = 1.0;
 
     for( unsigned int i = 0; i < pixelsTotal; i++ ) {
         ++counter[ heightMap->at( i ) ];
@@ -184,16 +185,17 @@ void mapGenerator::convColour( vector<biomeNode> &biomes ) {
             }
         }
 
-        cout << "hello" << endl;
-
         // Write biome to new image
         for( unsigned int j = 0; j < pixelsTotal; j++ ) {
-            if( heightMap->at( j ) <= biomeHeight && heightMap->at( j ) > prevHeight ) {
-                colourMap->at( j * 3 ) = biomes.at(i).red;
-                colourMap->at( j * 3 + 1 ) = biomes.at(i).green;
-                colourMap->at( j * 3 + 2 ) = biomes.at(i).blue;
+            if( heightMap->at( j ) <= biomeHeight && heightMap->at( j ) >= prevHeight ) {
+                float colourFactor =
+                    1.0 - shadingFactor + (float)heightMap->at( j ) / ( biomeHeight ) * shadingFactor;
+                colourMap->at( j * 3 ) = biomes.at(i).red * colourFactor;
+                colourMap->at( j * 3 + 1 ) = biomes.at(i).green * colourFactor;
+                colourMap->at( j * 3 + 2 ) = biomes.at(i).blue * colourFactor;
             }
         }
+        cout << prevHeight << " " << biomeHeight << endl;
         prevHeight = biomeHeight;
     }
 }

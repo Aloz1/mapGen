@@ -115,14 +115,25 @@ void pixelData::writeImage( const string &name ) {
                   PNG_FILTER_TYPE_BASE );
     png_write_info( png_ptr, info_ptr );
 
-    // Write bytes
+    // Set jump point for writing bytes
     if( setjmp( png_jmpbuf( png_ptr ) ) ) {
         png_free_data( png_ptr, info_ptr, PNG_FREE_ALL, -1 );
         throw runtime_error( "[writeImage] Unable to write data" );
     }
-    for( int i = 0; i < height; i++ ){
-        // Iterate through and write each row
-        png_write_row( png_ptr, rowPointer + ( i * width ) );
+
+    //Write bytes
+    if( colourType == PNG_COLOR_TYPE_RGB ) {
+        for( int i = 0; i < height; i++ ){
+            // Iterate through and write each row
+            png_write_row( png_ptr, rowPointer + ( i * width * 3 ) );
+        }
+
+    }
+    else {
+        for( int i = 0; i < height; i++ ){
+            // Iterate through and write each row
+            png_write_row( png_ptr, rowPointer + ( i * width ) );
+        }
     }
 
     // Write end
