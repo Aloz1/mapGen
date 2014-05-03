@@ -17,13 +17,44 @@
 
 solution "mapGen"
     configurations { "Debug", "Release" }
-    project "mapGen"
+    project "mapGenCLI"
         kind "ConsoleApp"
+        language "C++"
+        links { "mapGen" }
+        includedirs { "include" }
+        files { "include/**.hpp", "src/cliFrontEnd/**.cpp" }
+        location "build/mapGenCLI"
+        configuration "windows"
+            -- Windows properties
+
+        configuration "non windows"
+            -- Non windows properties
+
+        configuration "linux"
+            -- Linux properties
+            buildoptions { "-std=c++11" }
+            linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+
+        configuration "macosx"
+            -- Mac OSx properties
+
+        configuration "Debug"
+            defines { "DEBUG" }
+            flags { "Symbols" }
+            targetdir "bin/Debug"
+
+        configuration "Release"
+            defines { "RELEASE" }
+            flags { "Optimize" }
+            targetdir "bin/Release"
+
+    project "mapGen"
+        kind "SharedLib"
         language "C++"
         links { "png" }
         includedirs { "include" }
-        files { "include/**.hpp", "src/**.cpp" }
-        location "build"
+        files { "include/**.hpp", "src/libmapGen/**.cpp" }
+        location "build/libmapGen"
         configuration "windows"
             -- Windows properties
 
