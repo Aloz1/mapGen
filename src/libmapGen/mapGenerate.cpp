@@ -21,6 +21,7 @@
 #include <vector>
 #include <stdexcept>
 #include <random>
+#include <sstream>
 
 // Standard C includes
 #include <cstdio>
@@ -42,114 +43,199 @@ namespace {
 using namespace std;
 
 // Function Definitions
-mapGenerator::mapGenerator( uint8_t size, png_byte bDepth, png_byte clrType ):
-    size( size ),
-    colourMap( nullptr )
+
+mapGenerator::mapGenerator( int Seed, float RandomFactor, float ShadingFactor ):
+    seed( Seed ),
+    randomFactor( RandomFactor ),
+    shadingFactor( ShadingFactor )
 {
-    heightMap = new pixelData( pow( 2, size ), pow( 2, size ), bDepth, clrType );
-    if( size > maxSize )
-        throw runtime_error( "Size can not be larger than 14" );
-}
-
-mapGenerator::~mapGenerator() {
-}
-
-uint8_t mapGenerator::getSize() {
-    return size;
-}
-
-void mapGenerator::dsGenHeight( int randomFactor, int seed ) {
     if( seed == 0 ) {
-        seed = std::chrono::system_clock::now().time_since_epoch().count();
+        seed = chrono::high_resolution_clock::now().time_since_epoch().count();
     }
-    cout << "Seed: " << seed << endl;
+    cout << "  Seed: " << seed << endl;
+}
 
-    // Create random number generator
-    float rand = ( randomFactor * size ) / 14;
+
+int mapGenerator::foldback( int range, int position ) {
+    range--;
+    return abs( mod( ( position + range ), ( range * 2 )) - range );
+}
+
+int mapGenerator::partialDiamond( monoMapData &heightMap, int stepSize, int xOffset, int yOffset ) {
+    int topCorner, bottomCorner, leftCorner, rightCorner;
+    int width = heightMap.getWidth();
+    int height = heightMap.getHeight();
+
+    if( !heightMap.getWrap() ) {
+        topCorner = heightMap.get(
+                foldback( width, xOffset ),
+                foldback( height, yOffset )
+                )[0];
+        bottomCorner = heightMap.get(
+                foldback( width, xOffset ),
+                foldback( height, yOffset + stepSize )
+                )[0];
+        leftCorner = heightMap.get(
+                foldback( width, xOffset - stepSize / 2 ),
+                foldback( height, yOffset + stepSize / 2 )
+                )[0];
+        rightCorner = heightMap.get(
+                foldback( width, xOffset + stepSize / 2 ),
+                foldback( height, yOffset + stepSize / 2 )
+                )[0];
+    } else {
+        topCorner = heightMap.get(
+                xOffset,
+                yOffset
+                )[0];
+        bottomCorner = heightMap.get(
+                xOffset,
+                yOffset + stepSize
+                )[0];
+        leftCorner = heightMap.get(
+                xOffset - stepSize / 2,
+                yOffset + stepSize / 2
+                )[0];
+        rightCorner = heightMap.get(
+                xOffset + stepSize / 2,
+                yOffset + stepSize / 2
+                )[0];
+    }
+
+    int pixel = (
+            topCorner +
+            bottomCorner +
+            leftCorner +
+            rightCorner
+            ) / 4;
+    return pixel;
+}
+
+void mapGenerator::squareStep( monoMapData &heightMap, int stepSize, int rand ) {
+    int width = heightMap.getWidth();
+    int height = heightMap.getHeight();
+
+    unsigned int topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner;
+
+    for( int yOffset = 0; yOffset < height - 1; yOffset += stepSize ) {
+        for( int xOffset = 0; xOffset < width - 1; xOffset += stepSize ) {
+            topLeftCorner = heightMap.get( xOffset, yOffset )[0];
+            topRightCorner = heightMap.get( xOffset + stepSize, yOffset )[0];
+            bottomLeftCorner = heightMap.get( xOffset, yOffset + stepSize )[0];
+            bottomRightCorner = heightMap.get( xOffset + stepSize, yOffset + stepSize )[0];
+
+            std::array<png_byte, 1> pixel;
+            pixel[0] = (
+                    topLeftCorner +
+                    topRightCorner +
+                    bottomLeftCorner +
+                    bottomRightCorner
+                    ) / 4 + rand;
+            heightMap.set( xOffset + stepSize / 2, yOffset + stepSize / 2, pixel );
+        }
+    }
+}
+
+void mapGenerator::diamondStep( monoMapData &heightMap, int stepSize, int rand1, int rand2 ) {
+    int width = heightMap.getWidth();
+    int height = heightMap.getHeight();
+
+    for( int yOffset = 0; yOffset < height - 1; yOffset += stepSize ) {
+        for( int xOffset = 0; xOffset < width; xOffset += stepSize ) {
+            std::array<png_byte, 1> pixel;
+            pixel[0] = partialDiamond( heightMap, stepSize, xOffset, yOffset ) + rand1;
+            heightMap.set( xOffset, yOffset + stepSize / 2, pixel );
+        }
+    }
+    for( int yOffset = 0 - stepSize / 2; yOffset < height - 1; yOffset += stepSize ) {
+        for( int xOffset = stepSize / 2; xOffset < width; xOffset += stepSize ) {
+            std::array<png_byte, 1> pixel;
+            pixel[0] = partialDiamond( heightMap, stepSize, xOffset, yOffset ) + rand2;
+            heightMap.set( xOffset, yOffset + stepSize / 2, pixel );
+        }
+    }
+}
+
+void mapGenerator::dsGenerate( monoMapData &heightMap ) {
+    // Setup well used variables
+    unsigned int width = heightMap.getWidth();
+    unsigned int height = heightMap.getHeight();
+    unsigned int stepInit = (width - 1) / heightMap.getWidthTerm();
+    unsigned int stepSize = stepInit;
+    unsigned int res = heightMap.getRes();
+    float rand = res / 14;
+
+    std::array<png_byte, 1> pixel;
+
+    cout << "Generating" << endl;
+    cout << "  Width Term: " << heightMap.getWidthTerm() << endl;
+    cout << "  Height Term: " << heightMap.getHeightTerm() << endl;
+    cout << "  Width: " << width << endl;
+    cout << "  Height: " << height << endl;
+    cout << "  Resolution: " << res << endl;
+    cout << "  Wrap: " << ( heightMap.getWrap() ? "true" : "false" ) << endl;
+    cout << "  Seed: " << seed << endl;
+//    seed = 5;
+
     default_random_engine Generator( seed );
     uniform_real_distribution< float > randomness( -1, 1 );
     
-    // Set initial value
-    heightMap->set( 0, 0, randomness( Generator ) * 255 );
+    // Set initial values
+    int extra = 0;
+    if( !heightMap.getWrap() ) {
+        extra = 1;
+    }
 
-    // Generate map
-    
-    // Setup well used variables
-    unsigned int width = heightMap->getWidth();
-    unsigned int height = heightMap->getHeight();
-    unsigned int edge = width;
-    unsigned int mean;
-    
-    while( edge > 1 ) {
-        // Setup recalculated well used values
-        int halfEdge = edge / 2;
-        int xOffset, yOffset;
+    for( unsigned int countY = 0; countY < heightMap.getHeightTerm() + extra; countY++ ) {
+        for( unsigned int countX = 0; countX < heightMap.getWidthTerm() + extra; countX++ ) {
+            pixel[0] = round( randomness( Generator ) * 128 + 127 );
+            heightMap.set( countX * res, countY * res, pixel );
+        }
+    }
 
-        for( yOffset = 0; yOffset < height; yOffset += edge ) {
-            for( xOffset = 0; xOffset < width; xOffset += edge ) {
-                
-            // Diamond step
-				mean = (
-                                 // X positon           Y position
-                    heightMap->wrapGet( xOffset,            yOffset ) +
-                    heightMap->wrapGet( xOffset + edge,     yOffset) +
-                    heightMap->wrapGet( xOffset,            yOffset + edge ) +
-                    heightMap->wrapGet( xOffset + edge,     yOffset + edge )
-                ) / 4 + randomness( Generator ) * rand;
-                
-                heightMap->wrapSet( xOffset + halfEdge, yOffset + halfEdge, mean );
-            }
-        }
-        for( yOffset = 0; yOffset < height; yOffset += edge ) {
-            for( xOffset = 0; xOffset < width; xOffset += edge ) {
-            // Square step
-                
-                // First diamond
-                mean = (
-                         // X position                      Y position
-                    heightMap->wrapGet( xOffset + halfEdge, yOffset - halfEdge ) +
-                    heightMap->wrapGet( xOffset,            yOffset ) +
-                    heightMap->wrapGet( xOffset + edge,     yOffset ) +
-                    heightMap->wrapGet( xOffset + halfEdge, yOffset + halfEdge )
-                ) / 4 + randomness( Generator ) * rand;
-                
-                heightMap->wrapSet( xOffset + halfEdge, yOffset, mean);
-                
-                // Second diamond
-                                 // X position                  Y position
-                mean =
-                (
-                    heightMap->wrapGet( xOffset,                yOffset ) +
-                    heightMap->wrapGet( xOffset - halfEdge,     yOffset + halfEdge ) +
-                    heightMap->wrapGet( xOffset + halfEdge,     yOffset + halfEdge ) +
-                    heightMap->wrapGet( xOffset,                yOffset + edge ) 
-                ) / 4 + randomness( Generator ) * rand;
-                
-                heightMap->wrapSet( xOffset, yOffset + halfEdge, mean );
-            }
-        }
-        edge = halfEdge;
-        // Reduce random number
-        rand /= 2 ;
+    stringstream ss;
+    double debugNum = 0;
+    rand = 128 * res / 14;
+    while( stepSize > 1 ) {
+        /*
+        cout << "stepSize: " << stepSize << endl;
+        cout << "randomness: " << randomFactor << endl;
+        */
+        cout << "rand: " << rand << endl;
+        ss.str("");
+        ss << "heightMap" << debugNum;
+        debugNum += 0.5;
+        heightMap.writeImage(ss.str());
+        squareStep( heightMap, stepSize, randomness( Generator ) * rand );
+
+        ss.str("");
+        ss << "heightMap" << debugNum;
+        debugNum += 0.5;
+        heightMap.writeImage(ss.str());
+        diamondStep( heightMap, stepSize, randomness( Generator ) * rand, randomness( Generator ) * rand );
+        //squareStep( heightMap, stepSize, randomness( Generator ) * rand );
+        //diamondStep( heightMap, stepSize, 0, 0 );
+        stepSize /= 2;
+        rand /= 2;
     }
 }
 
-void mapGenerator::convColour( vector<biomeNode> &biomes, float shadingFactor ) {
-    unsigned int pixelsTotal = heightMap->getWidth() * heightMap->getHeight();
+void mapGenerator::colourise(
+        monoMapData &heightMap, colourMapData &colourMap,
+        vector<biomeNode> &biomes
+        ) {
+    unsigned int pixelsTotal = heightMap.getRealWidth() * heightMap.getRealHeight();
     unsigned int biomeCount = biomes.size();
     unsigned int biomeHeight = 0;
     unsigned int prevHeight = 0;
     vector<unsigned int> counter( 256, 0 ); // Container to count pixels
 
-    if( colourMap == nullptr )
-        colourMap = new pixelData(
-                heightMap->getWidth(), heightMap->getHeight(),
-                8, PNG_COLOR_TYPE_RGB
-        );
+    cout << "Colouring" << endl;
+
     if( shadingFactor > 1.0 ) shadingFactor = 1.0;
 
     for( unsigned int i = 0; i < pixelsTotal; i++ ) {
-        ++counter[ heightMap->at( i ) ];
+        ++counter[ heightMap.at( i ) ];
     }
 
     for( unsigned int i = 0; i < biomeCount; i++ ) {
@@ -187,25 +273,16 @@ void mapGenerator::convColour( vector<biomeNode> &biomes, float shadingFactor ) 
 
         // Write biome to new image
         for( unsigned int j = 0; j < pixelsTotal; j++ ) {
-            if( heightMap->at( j ) <= biomeHeight && heightMap->at( j ) >= prevHeight ) {
+            if( heightMap.at( j ) <= biomeHeight && heightMap.at( j ) >= prevHeight ) {
                 float colourFactor =
-                    1.0 - shadingFactor + (float)heightMap->at( j ) / ( biomeHeight ) * shadingFactor;
-                colourMap->at( j * 3 ) = biomes.at(i).red * colourFactor;
-                colourMap->at( j * 3 + 1 ) = biomes.at(i).green * colourFactor;
-                colourMap->at( j * 3 + 2 ) = biomes.at(i).blue * colourFactor;
+                    1.0 - shadingFactor + (float)heightMap.at( j ) / ( biomeHeight ) * shadingFactor;
+                colourMap.at( j * 3 ) = biomes.at(i).red * colourFactor;
+                colourMap.at( j * 3 + 1 ) = biomes.at(i).green * colourFactor;
+                colourMap.at( j * 3 + 2 ) = biomes.at(i).blue * colourFactor;
             }
         }
         cout << prevHeight << " " << biomeHeight << endl;
         prevHeight = biomeHeight;
     }
-}
-
-void mapGenerator::writeImage( const string &name ) {
-    heightMap->writeImage( name );
-}
-
-void mapGenerator::writeImage( const string &heightName, const string &colourName ) {
-    heightMap->writeImage( heightName );
-    if( colourMap != nullptr )
-        colourMap->writeImage( colourName );
+    cout << "Colouring finished" << endl;
 }

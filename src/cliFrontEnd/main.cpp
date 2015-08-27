@@ -26,6 +26,7 @@
 //#include <cstdlib>
 #include <cstdint>
 #include <cmath>
+#include <cstring>
 
 // Library includes
 #include <png.h>
@@ -33,38 +34,87 @@
 // Definition includes
 #include "mapGenerate.hpp"
 #include "heightNode.hpp"
+#include "mapData.hpp"
 
 // Prototypes
 void setHeights( std::vector<biomeNode> & );
 
 // Namespace Definitions
 namespace {
-    uint8_t size = 10;
-    uint8_t randomFactor = 255;
-    std::vector<biomeNode> heights;
+    uint8_t res = 8;
+    uint8_t width = 3;
+    uint8_t height = 2;
+    bool wrap = true;
+    float randomFactor = 1.0;
+    std::vector<biomeNode> biomes;
 }
 
 using namespace std;
 
+
+//@ To Do: Get different width and height working!
+
 // Main Function
 int main( int argc, char *argv[] ) {
 
+    int count = 1;
+    while( count < argc ) {
+        if( strcmp( argv[count], "--res") == 0 ) {
+            count++;
+            if( count >= argc ) {
+                cerr << "Error: Not enough parameters specified" << endl;
+                return -1;
+            }
+            res = atol( argv[count] );
+        } else if( strcmp( argv[count], "--width" ) == 0 ) {
+            count++;
+            if( count >= argc ) {
+                cerr << "Error: Not enough parameters specified" << endl;
+                return -1;
+            }
+            width = atol( argv[count] );
+        } else if( strcmp( argv[count], "--height" ) == 0 ) {
+            count++;
+            if( count >= argc ) {
+                cerr << "Error: Not enough parameters specified" << endl;
+                return -1;
+            }
+            height = atol( argv[count] );
+        } else if( strcmp( argv[count], "--wrap" ) == 0 ) {
+            count++;
+            if( count >= argc ) {
+                cerr << "Error: Not enough parameters specified" << endl;
+                return -1;
+            }
+            if( strcmp( argv[count], "true" ) == 0 ) {
+                wrap = true;
+            } else {
+                wrap = false;
+            }
+        }
+        count++;
+    }
+
     try {
         // Set biomes
-        setHeights( heights );
+        setHeights( biomes );
 
         // Create image
-        mapGenerator map( size, 8, PNG_COLOR_TYPE_GRAY );
+        monoMapData heightMap( width, height, res, wrap );
+        colourMapData colourMap( width, height, res, wrap );
+
+        mapGenerator map;
         
         // Generate Image
-        map.dsGenHeight( randomFactor );
+        map.dsGenerate( heightMap );
         
         // Colour map
-        map.convColour( heights );
-        
+        map.colourise( heightMap, colourMap, biomes );
+
         // Write image
-        map.writeImage( "heightMap", "colourMap" );
-        
+        heightMap.writeImage( "heightMap" );
+        colourMap.writeImage( "colourMap" );
+
         return 0;
     }
     catch( exception &x ) {

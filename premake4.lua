@@ -20,7 +20,7 @@ solution "mapGen"
     project "mapGenCLI"
         kind "ConsoleApp"
         language "C++"
-        links { "mapGen" }
+        links { "mapGen", "png" }
         includedirs { "include" }
         files { "include/**.hpp", "src/cliFrontEnd/**.cpp" }
         location "build/mapGenCLI"
@@ -53,7 +53,7 @@ solution "mapGen"
         language "C++"
         links { "png" }
         includedirs { "include" }
-        files { "include/**.hpp", "src/libmapGen/**.cpp" }
+        files { "include/**.hpp", "src/libmapGen/**.cpp", "src/common.cpp" }
         location "build/libmapGen"
         configuration "windows"
             -- Windows properties

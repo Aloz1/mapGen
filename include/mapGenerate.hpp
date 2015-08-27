@@ -21,31 +21,38 @@
 
 // Standard C++ includes
 #include <string>
+#include <random>
 
 // Standard C includes
 #include <cstdint>
 
 // Definition includes
-#include "pixelData.hpp"
+#include "mapData.hpp"
 #include "heightNode.hpp"
 
 // Class Definitions
 class mapGenerator {
     // Variables
-    unsigned int size;
-    pixelData *heightMap, *colourMap;
+    int seed;
+    float randomFactor;
+    float shadingFactor;
+
+    // Private Functions
+    void squareStep( monoMapData &heightMap, int stepSize, int rand );
+    void diamondStep( monoMapData &heightMap, int stepSize, int rand1, int rand2 );
+    int foldback( int range, int position );
+
+    int partialDiamond( monoMapData &heightMap, int stepSize, int xOffset, int yOffset );
 
   public:
     // Functions
     uint8_t getSize();
-    void dsGenHeight( int randomFactor, int seed = 0 );
-    void simplexGenHeight( int randomFactor, int seed = 0 );
-    void convColour( std::vector<biomeNode> &biomes, float shadingFactor = 1.0 );
-    void writeImage( const std::string &name );
-    void writeImage( const std::string &heightName, const std::string &colourName );
-    
+    void dsGenerate( monoMapData &heightMap );
+    void simplexGenerate( monoMapData &heightMap );
+
+    void colourise( monoMapData &heightMap, colourMapData &colourMap, std::vector<biomeNode> &biomes );
+
     // Constructor/Destructor
-    mapGenerator( uint8_t size, png_byte bDepth, png_byte clrType );
-    ~mapGenerator();
+    mapGenerator( int Seed = 0, float RandomFactor = 1.0, float ShadingFactor = 1.0 );
 };
 #endif
