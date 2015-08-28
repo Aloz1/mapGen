@@ -43,6 +43,7 @@ class mapData {
     unsigned int widthTerm;
     unsigned int heightTerm;
     unsigned int resolution;
+    unsigned int resPwr;
     bool wrap;
 
     const png_byte bitDepth = 8;
@@ -69,6 +70,7 @@ class mapData {
     unsigned int getBlockHeight() const;
 
     unsigned int getRes() const;
+    unsigned int getResPwr() const;
     unsigned int getWrap() const;
 
     void writeImage( const std::string & );
@@ -108,7 +110,8 @@ mapData<N>::mapData( unsigned int BlkWidth, unsigned int BlkHeight, unsigned int
     }
     widthTerm = BlkWidth / gcf;
     heightTerm = BlkHeight / gcf;
-    resolution = pow( 2, ResPwr );
+    resPwr = ResPwr;
+    resolution = pow( 2, resPwr );
 
 
     // Set colour type of the PNG based off of the template size.
@@ -175,9 +178,6 @@ std::array<png_byte, N> mapData<N>::get( int X, int Y ) const {
     }
 
     for( size_t i = 0; i < N; i++ ) {
-        if( i != 0 ) {
-            std::cout << i << std::endl;
-        }
         pixels[i] = pixelArray[ position + i ];
     };
     return pixels;
@@ -190,7 +190,7 @@ void mapData<N>::set( unsigned int X, unsigned int Y, std::array<png_byte, N> da
 
     if( wrap ) {
         for( size_t i = 0; i < N; i++ ) {
-            pixelArray[ mod( X, width ) * N + mod( Y, height ) * width + i ] = data[i];
+            pixelArray[ ( mod( X, width ) + mod( Y, height ) * width ) * N + i ] = data[i];
         }
     } else {
         if( X >= width ) {
@@ -202,7 +202,7 @@ void mapData<N>::set( unsigned int X, unsigned int Y, std::array<png_byte, N> da
             throw std::runtime_error( "mapData<N>::set(): Y too large for set statement" );
         }
         for( unsigned int i = 0; i < N; i++ ) {
-            pixelArray[ X * N + Y * width + i ] = data[i];
+            pixelArray[ ( X + Y * width ) * N + i ] = data[i];
         }
     }
 }
@@ -248,6 +248,11 @@ unsigned int mapData<N>::getHeightTerm() const {
 template< size_t N >
 unsigned int mapData<N>::getRes() const {
     return resolution;
+}
+
+template< size_t N >
+unsigned int mapData<N>::getResPwr() const {
+    return resPwr;
 }
 
 template< size_t N >

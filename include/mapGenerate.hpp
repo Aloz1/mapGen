@@ -33,16 +33,16 @@
 // Class Definitions
 class mapGenerator {
     // Variables
-    int seed;
-    float randomFactor;
+    float smoothFactor;
     float shadingFactor;
+    std::default_random_engine rEng;
 
     // Private Functions
-    void squareStep( monoMapData &heightMap, int stepSize, int rand );
-    void diamondStep( monoMapData &heightMap, int stepSize, int rand1, int rand2 );
-    int foldback( int range, int position );
-
+    void squareStep( monoMapData &heightMap, int stepSize, float randFact );
+    void diamondStep( monoMapData &heightMap, int stepSize, float randFact );
     int partialDiamond( monoMapData &heightMap, int stepSize, int xOffset, int yOffset );
+
+    int foldback( int range, int position );
 
   public:
     // Functions
@@ -53,6 +53,6 @@ class mapGenerator {
     void colourise( monoMapData &heightMap, colourMapData &colourMap, std::vector<biomeNode> &biomes );
 
     // Constructor/Destructor
-    mapGenerator( int Seed = 0, float RandomFactor = 1.0, float ShadingFactor = 1.0 );
+    mapGenerator( int Seed = 0, float SmoothFactor = 1.0, float ShadingFactor = 1.0 );
 };
 #endif

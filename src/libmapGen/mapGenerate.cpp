@@ -36,23 +36,22 @@
 // Definition includes
 #include "mapGenerate.hpp"
 
+using namespace std;
+
 namespace {
     uint8_t maxSize = 14;
 }
 
-using namespace std;
-
 // Function Definitions
 
-mapGenerator::mapGenerator( int Seed, float RandomFactor, float ShadingFactor ):
-    seed( Seed ),
-    randomFactor( RandomFactor ),
-    shadingFactor( ShadingFactor )
+mapGenerator::mapGenerator( int Seed, float SmoothFactor, float ShadingFactor ):
+    smoothFactor( SmoothFactor ),
+    shadingFactor( ShadingFactor ),
+    rEng( Seed )
 {
-    if( seed == 0 ) {
-        seed = chrono::high_resolution_clock::now().time_since_epoch().count();
+    if( Seed == 0 ) {
+         rEng.seed( chrono::high_resolution_clock::now().time_since_epoch().count() );
     }
-    cout << "  Seed: " << seed << endl;
 }
 
 
@@ -111,11 +110,14 @@ int mapGenerator::partialDiamond( monoMapData &heightMap, int stepSize, int xOff
     return pixel;
 }
 
-void mapGenerator::squareStep( monoMapData &heightMap, int stepSize, int rand ) {
+void mapGenerator::squareStep( monoMapData &heightMap, int stepSize, float randFact ) {
     int width = heightMap.getWidth();
     int height = heightMap.getHeight();
-
     unsigned int topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner;
+
+    std::array<png_byte, 1> pixel;
+    uniform_real_distribution< float > uniDist( -1, 1 );
+
 
     for( int yOffset = 0; yOffset < height - 1; yOffset += stepSize ) {
         for( int xOffset = 0; xOffset < width - 1; xOffset += stepSize ) {
@@ -124,33 +126,34 @@ void mapGenerator::squareStep( monoMapData &heightMap, int stepSize, int rand ) 
             bottomLeftCorner = heightMap.get( xOffset, yOffset + stepSize )[0];
             bottomRightCorner = heightMap.get( xOffset + stepSize, yOffset + stepSize )[0];
 
-            std::array<png_byte, 1> pixel;
             pixel[0] = (
                     topLeftCorner +
                     topRightCorner +
                     bottomLeftCorner +
                     bottomRightCorner
-                    ) / 4 + rand;
+                    ) / 4 + uniDist( rEng ) * randFact;
             heightMap.set( xOffset + stepSize / 2, yOffset + stepSize / 2, pixel );
         }
     }
 }
 
-void mapGenerator::diamondStep( monoMapData &heightMap, int stepSize, int rand1, int rand2 ) {
+void mapGenerator::diamondStep( monoMapData &heightMap, int stepSize, float randFact ) {
     int width = heightMap.getWidth();
     int height = heightMap.getHeight();
 
+    std::array<png_byte, 1> pixel;
+    uniform_real_distribution< float > uniDist( -1, 1 );
+
+    // New Code
     for( int yOffset = 0; yOffset < height - 1; yOffset += stepSize ) {
         for( int xOffset = 0; xOffset < width; xOffset += stepSize ) {
-            std::array<png_byte, 1> pixel;
-            pixel[0] = partialDiamond( heightMap, stepSize, xOffset, yOffset ) + rand1;
+            pixel[0] = partialDiamond( heightMap, stepSize, xOffset, yOffset ) + uniDist( rEng ) * randFact;
             heightMap.set( xOffset, yOffset + stepSize / 2, pixel );
         }
     }
     for( int yOffset = 0 - stepSize / 2; yOffset < height - 1; yOffset += stepSize ) {
         for( int xOffset = stepSize / 2; xOffset < width; xOffset += stepSize ) {
-            std::array<png_byte, 1> pixel;
-            pixel[0] = partialDiamond( heightMap, stepSize, xOffset, yOffset ) + rand2;
+            pixel[0] = partialDiamond( heightMap, stepSize, xOffset, yOffset ) + uniDist( rEng ) * randFact;
             heightMap.set( xOffset, yOffset + stepSize / 2, pixel );
         }
     }
@@ -163,9 +166,11 @@ void mapGenerator::dsGenerate( monoMapData &heightMap ) {
     unsigned int stepInit = (width - 1) / heightMap.getWidthTerm();
     unsigned int stepSize = stepInit;
     unsigned int res = heightMap.getRes();
-    float rand = res / 14;
+    unsigned int resPwr = heightMap.getResPwr();
+    float rand;
 
     std::array<png_byte, 1> pixel;
+    uniform_real_distribution< float > uniDist( -1, 1 );
 
     cout << "Generating" << endl;
     cout << "  Width Term: " << heightMap.getWidthTerm() << endl;
@@ -174,11 +179,8 @@ void mapGenerator::dsGenerate( monoMapData &heightMap ) {
     cout << "  Height: " << height << endl;
     cout << "  Resolution: " << res << endl;
     cout << "  Wrap: " << ( heightMap.getWrap() ? "true" : "false" ) << endl;
-    cout << "  Seed: " << seed << endl;
 //    seed = 5;
 
-    default_random_engine Generator( seed );
-    uniform_real_distribution< float > randomness( -1, 1 );
     
     // Set initial values
     int extra = 0;
@@ -188,33 +190,33 @@ void mapGenerator::dsGenerate( monoMapData &heightMap ) {
 
     for( unsigned int countY = 0; countY < heightMap.getHeightTerm() + extra; countY++ ) {
         for( unsigned int countX = 0; countX < heightMap.getWidthTerm() + extra; countX++ ) {
-            pixel[0] = round( randomness( Generator ) * 128 + 127 );
+            pixel[0] = round( uniDist( rEng ) * 128 + 127 );
             heightMap.set( countX * res, countY * res, pixel );
         }
     }
 
-    stringstream ss;
-    double debugNum = 0;
-    rand = 128 * res / 14;
+    //stringstream ss;
+    //double debugNum = 0;
+    rand = 256 * resPwr / 14;
     while( stepSize > 1 ) {
         /*
         cout << "stepSize: " << stepSize << endl;
         cout << "randomness: " << randomFactor << endl;
-        */
+        cout << "stepSize: " << stepSize << endl;
         cout << "rand: " << rand << endl;
-        ss.str("");
-        ss << "heightMap" << debugNum;
-        debugNum += 0.5;
-        heightMap.writeImage(ss.str());
-        squareStep( heightMap, stepSize, randomness( Generator ) * rand );
+        */
+        //ss.str("");
+        //ss << "heightMap" << debugNum;
+        //debugNum += 0.5;
+        //heightMap.writeImage(ss.str());
+        squareStep( heightMap, stepSize, rand );
 
-        ss.str("");
-        ss << "heightMap" << debugNum;
-        debugNum += 0.5;
-        heightMap.writeImage(ss.str());
-        diamondStep( heightMap, stepSize, randomness( Generator ) * rand, randomness( Generator ) * rand );
-        //squareStep( heightMap, stepSize, randomness( Generator ) * rand );
-        //diamondStep( heightMap, stepSize, 0, 0 );
+        //ss.str("");
+        //ss << "heightMap" << debugNum;
+        //debugNum += 0.5;
+        //heightMap.writeImage(ss.str());
+        diamondStep( heightMap, stepSize, rand );
+
         stepSize /= 2;
         rand /= 2;
     }
