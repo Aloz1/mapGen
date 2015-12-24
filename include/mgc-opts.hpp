@@ -10,7 +10,8 @@ class CLI_mapGen_opts {
     uint8_t res;
     uint8_t width;
     uint8_t height;
-    bool wrap;
+    bool wrapX;
+    bool wrapY;
     float randomFactor;
     std::vector<biomeNode> biomes;
 
@@ -18,6 +19,14 @@ class CLI_mapGen_opts {
     CLI_mapGen_opts( int argc = 0, char **argv = nullptr );
     void parseOptions( int argc, char **argv );
     void parseBiomes( char *biomeText );
+
+    uint8_t getRes();
+    uint8_t getWidth();
+    uint8_t getHeight();
+    bool getWrapX();
+    bool getWrapY();
+    float getRandFact();
+    std::vector<biomeNode>* getBiome();
 };
 
 #endif

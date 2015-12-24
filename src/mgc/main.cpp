@@ -42,36 +42,10 @@ void setHeights( std::vector<biomeNode> & );
 
 // Namespace Definitions
 namespace {
-    uint8_t res = 8;
-    uint8_t width = 3;
-    uint8_t height = 2;
-    bool wrap = true;
-    float randomFactor = 1.0;
     std::vector<biomeNode> biomes;
 }
 
-struct CFG {
-    uint8_t res;
-    uint8_t width;
-    uint8_t height;
-    bool wrap;
-    float randomFactor;
-    std::vector<biomeNode> biomes;
-};
-
 using namespace std;
-
-
-//@ To Do: Add seperate width and height wrapping!
-//@ To Do: Improve Option parsing input!
-
-
-//  struct option {
-//      const char *name;       /* name of long option */
-//      int         has_arg;    /* no_argument, required_argument, optional_argument */
-//      int        *flag;       /* If NULL, function returns option otherwise val is loaded into pointer */
-//      int         val;        /* Value to return or to be loaded into flag */
-//  };
 
 
 // Main Function
@@ -85,9 +59,18 @@ int main( int argc, char *argv[] ) {
         setHeights( biomes );
 
         // Create image
-        /*
-        monoMapData heightMap( opts.width, opts.height, opts.res, opts.wrap );
-        colourMapData colourMap( opts.width, opts.height, opts.res, opts.wrap );
+        monoMapData heightMap(
+                opts.getWidth(),
+                opts.getHeight(),
+                opts.getRes(),
+                opts.getWrapX() || opts.getWrapY()
+            );
+        colourMapData colourMap(
+                opts.getWidth(),
+                opts.getHeight(),
+                opts.getRes(),
+                opts.getWrapX() || opts.getWrapY()
+            );
 
         mapGenerator map;
         
@@ -100,7 +83,6 @@ int main( int argc, char *argv[] ) {
         // Write image
         heightMap.writeImage( "heightMap" );
         colourMap.writeImage( "colourMap" );
-        */
 
         return 0;
     }

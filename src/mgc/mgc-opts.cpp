@@ -53,7 +53,8 @@ CLI_mapGen_opts::CLI_mapGen_opts( int argc, char **argv ):
     res( 8 ),
     width( 3 ),
     height( 2 ),
-    wrap( true ),
+    wrapX( false ),
+    wrapY( false ),
     randomFactor( 1.0 )
 {
     if( argc > 0 ) {
@@ -81,7 +82,9 @@ void CLI_mapGen_opts::parseOptions( int argc, char *argv[] ) {
     while( (optn = getopt_long( argc, argv, "b:r:w:h:xy?", long_options, &option_index)) != -1 ) {
         switch( optn ) {
             case 'r':
+                cout << "res-optarg: '" << optarg << "'" << endl;
                 res = atoi( optarg );
+                cout << "res: '" << res << "'" << endl;
                 break;
             case 'R':
                 randomFactor = atoi( optarg );
@@ -93,10 +96,10 @@ void CLI_mapGen_opts::parseOptions( int argc, char *argv[] ) {
                 height = atoi( optarg );
                 break;
             case 'x':
-                wrap = true;
+                wrapX = true;
                 break;
             case 'y':
-                wrap = true;
+                wrapY = true;
                 break;
             case 'b':
                 parseBiomes( optarg );
@@ -113,6 +116,34 @@ void CLI_mapGen_opts::parseOptions( int argc, char *argv[] ) {
         }
         option_index = 0;
     }
+}
+
+uint8_t CLI_mapGen_opts::getRes() {
+    return res;
+}
+
+uint8_t CLI_mapGen_opts::getWidth(){
+    return width;
+}
+
+uint8_t CLI_mapGen_opts::getHeight(){
+    return height;
+}
+
+bool CLI_mapGen_opts::getWrapX(){
+    return wrapX;
+}
+
+bool CLI_mapGen_opts::getWrapY(){
+    return wrapY;
+}
+
+float CLI_mapGen_opts::getRandFact(){
+    return randomFactor;
+}
+
+std::vector<biomeNode>* CLI_mapGen_opts::getBiome(){
+    return &biomes;
 }
 
 vector<string> splitString( string toSplit, string delimiter ) {
