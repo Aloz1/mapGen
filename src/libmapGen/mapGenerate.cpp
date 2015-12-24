@@ -65,41 +65,33 @@ int mapGenerator::partialDiamond( monoMapData &heightMap, int stepSize, int xOff
     int width = heightMap.getWidth();
     int height = heightMap.getHeight();
 
-    if( !heightMap.getWrap() ) {
-        topCorner = heightMap.get(
-                foldback( width, xOffset ),
-                foldback( height, yOffset )
-                )[0];
-        bottomCorner = heightMap.get(
-                foldback( width, xOffset ),
-                foldback( height, yOffset + stepSize )
-                )[0];
-        leftCorner = heightMap.get(
-                foldback( width, xOffset - stepSize / 2 ),
-                foldback( height, yOffset + stepSize / 2 )
-                )[0];
-        rightCorner = heightMap.get(
-                foldback( width, xOffset + stepSize / 2 ),
-                foldback( height, yOffset + stepSize / 2 )
-                )[0];
-    } else {
-        topCorner = heightMap.get(
-                xOffset,
-                yOffset
-                )[0];
-        bottomCorner = heightMap.get(
-                xOffset,
-                yOffset + stepSize
-                )[0];
-        leftCorner = heightMap.get(
-                xOffset - stepSize / 2,
-                yOffset + stepSize / 2
-                )[0];
-        rightCorner = heightMap.get(
-                xOffset + stepSize / 2,
-                yOffset + stepSize / 2
-                )[0];
+    int xLeft, xMiddle, xRight;
+    int yTop, yMiddle, yBottom;
+
+    xLeft = xOffset - stepSize / 2;
+    xMiddle = xOffset;
+    xRight = xOffset + stepSize / 2;
+
+    yTop = yOffset;
+    yMiddle = yOffset + stepSize / 2;
+    yBottom = yOffset + stepSize;
+
+    if( !heightMap.getWrapX() ) {
+        xLeft = foldback( width, xLeft );
+        xMiddle = foldback( width, xMiddle );
+        xRight = foldback( width, xRight );
     }
+
+    if( !heightMap.getWrapY() ) {
+        yTop = foldback( height, yTop );
+        yMiddle = foldback( height, yMiddle );
+        yBottom = foldback( height, yBottom );
+    }
+
+    topCorner = heightMap.get( xMiddle, yTop )[0];
+    bottomCorner = heightMap.get( xMiddle, yBottom )[0];
+    leftCorner = heightMap.get( xLeft, yMiddle )[0];
+    rightCorner = heightMap.get( xRight, yMiddle )[0];
 
     int pixel = (
             topCorner +
@@ -178,18 +170,24 @@ void mapGenerator::dsGenerate( monoMapData &heightMap ) {
     cout << "  Width: " << width << endl;
     cout << "  Height: " << height << endl;
     cout << "  Resolution: " << res << endl;
-    cout << "  Wrap: " << ( heightMap.getWrap() ? "true" : "false" ) << endl;
+    cout << "  WrapX: " << ( heightMap.getWrapX() ? "true" : "false" ) << endl;
+    cout << "  WrapY: " << ( heightMap.getWrapY() ? "true" : "false" ) << endl;
 //    seed = 5;
 
     
     // Set initial values
-    int extra = 0;
-    if( !heightMap.getWrap() ) {
-        extra = 1;
+    int extraX = 0;
+    int extraY = 0;
+
+    if( !heightMap.getWrapX() ) {
+        extraX = 1;
+    }
+    if( !heightMap.getWrapY() ) {
+        extraY = 1;
     }
 
-    for( unsigned int countY = 0; countY < heightMap.getHeightTerm() + extra; countY++ ) {
-        for( unsigned int countX = 0; countX < heightMap.getWidthTerm() + extra; countX++ ) {
+    for( unsigned int countY = 0; countY < heightMap.getHeightTerm() + extraX; countY++ ) {
+        for( unsigned int countX = 0; countX < heightMap.getWidthTerm() + extraY; countX++ ) {
             pixel[0] = round( uniDist( rEng ) * 128 + 127 );
             heightMap.set( countX * res, countY * res, pixel );
         }

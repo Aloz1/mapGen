@@ -63,13 +63,15 @@ int main( int argc, char *argv[] ) {
                 opts.getWidth(),
                 opts.getHeight(),
                 opts.getRes(),
-                opts.getWrapX() || opts.getWrapY()
+                opts.getWrapX(),
+                opts.getWrapY()
             );
         colourMapData colourMap(
                 opts.getWidth(),
                 opts.getHeight(),
                 opts.getRes(),
-                opts.getWrapX() || opts.getWrapY()
+                opts.getWrapX(),
+                opts.getWrapY()
             );
 
         mapGenerator map;

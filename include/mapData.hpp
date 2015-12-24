@@ -44,7 +44,8 @@ class mapData {
     unsigned int heightTerm;
     unsigned int resolution;
     unsigned int resPwr;
-    bool wrap;
+    bool wrapX;
+    bool wrapY;
 
     const png_byte bitDepth = 8;
 
@@ -55,7 +56,7 @@ class mapData {
   public:
     std::array<png_byte, N> get( int X, int Y ) const;
 
-    void set( unsigned int X, unsigned int Y, std::array<png_byte, N> );
+    void set( int X, int Y, std::array<png_byte, N> );
 
     unsigned int getWidth() const;
     unsigned int getHeight() const;
@@ -71,7 +72,8 @@ class mapData {
 
     unsigned int getRes() const;
     unsigned int getResPwr() const;
-    unsigned int getWrap() const;
+    unsigned int getWrapX() const;
+    unsigned int getWrapY() const;
 
     void writeImage( const std::string & );
 
@@ -80,7 +82,7 @@ class mapData {
     // Constructor/Destructor
     mapData(
             unsigned int BlkWidth, unsigned int BlkHeight,
-            unsigned int Res, bool Wrap = true
+            unsigned int Res, bool WrapX = true, bool WrapY = true
             );
     mapData( mapData<N> &copiedData );
     ~mapData();
@@ -92,7 +94,7 @@ typedef mapData<3> colourMapData;
 
 // Constructor
 template< size_t N >
-mapData<N>::mapData( unsigned int BlkWidth, unsigned int BlkHeight, unsigned int ResPwr, bool Wrap ) {
+mapData<N>::mapData( unsigned int BlkWidth, unsigned int BlkHeight, unsigned int ResPwr, bool WrapX, bool WrapY ) {
     unsigned int num = BlkWidth;
     unsigned int denom = BlkHeight;
     unsigned int gcf = 0;
@@ -118,14 +120,19 @@ mapData<N>::mapData( unsigned int BlkWidth, unsigned int BlkHeight, unsigned int
     setColourType();
 
     // Set if map is to wrap
-    wrap = Wrap;
+    wrapX = WrapX;
+    wrapY = WrapY;
 
     // Create array with size multiplied by No. of subpixels
     // Create array with width and height as multiples of 2 and with N subpixels
-    if( wrap ) {
+    if( wrapX & wrapY ) {
         pixelArray.resize( widthTerm * heightTerm * pow( resolution, 2 ) * N );
+    } else if( wrapX ) {
+        pixelArray.resize( ( widthTerm * resolution ) * ( heightTerm * resolution + 1 ) * N );
+    } else if( wrapY ) {
+        pixelArray.resize( ( widthTerm * resolution + 1 ) * ( heightTerm * resolution ) * N );
     } else {
-        pixelArray.resize( ( widthTerm * resolution + 1 ) * ( heightTerm * resolution + 1) * N );
+        pixelArray.resize( ( widthTerm * resolution + 1 ) * ( heightTerm * resolution + 1 ) * N );
     }
 }
 
@@ -163,19 +170,23 @@ std::array<png_byte, N> mapData<N>::get( int X, int Y ) const {
     unsigned int width = getRealWidth();
     unsigned int height = getRealHeight();
 
-    if( wrap ) {
-        position = ( mod( X, width ) + mod( Y, height ) * width ) * N;
-    } else {
-        if( X >= width ) {
-            std::cerr << "X: " << X << ", width: " << width << std::endl;
-            throw std::runtime_error( "mapData<N>::get(): X too large for get statement" );
-        }
-        if( Y >= height ) {
-            std::cerr << "Y: " << Y << ", height: " << height << std::endl;
-            throw std::runtime_error( "mapData<N>::get(): Y too large for get statement" );
-        }
-        position = ( X + Y * width ) * N;
+    if( wrapX ) {
+        X = mod( X, width );
+    } else if( X < 0 ) {
+        throw std::runtime_error( "mapData<N>::get(): X smaller than 0 in get statement" );
+    } else if( X >= width ) {
+        throw std::runtime_error( "mapData<N>::get(): X too large for get statement" );
     }
+
+    if( wrapY ) {
+        Y = mod( Y, height );
+    } else if( Y < 0 ) {
+        throw std::runtime_error( "mapData<N>::get(): Y smaller than 0 in get statement" );
+    } else if( Y >= height ) {
+        throw std::runtime_error( "mapData<N>::get(): Y too large for get statement" );
+    }
+
+    position = ( X + Y * width ) * N;
 
     for( size_t i = 0; i < N; i++ ) {
         pixels[i] = pixelArray[ position + i ];
@@ -184,26 +195,28 @@ std::array<png_byte, N> mapData<N>::get( int X, int Y ) const {
 }
 
 template< size_t N >
-void mapData<N>::set( unsigned int X, unsigned int Y, std::array<png_byte, N> data ) {
+void mapData<N>::set( int X, int Y, std::array<png_byte, N> data ) {
     unsigned int width = getRealWidth();
     unsigned int height = getRealHeight();
 
-    if( wrap ) {
-        for( size_t i = 0; i < N; i++ ) {
-            pixelArray[ ( mod( X, width ) + mod( Y, height ) * width ) * N + i ] = data[i];
-        }
-    } else {
-        if( X >= width ) {
-            std::cerr << "X: " << X << ", width: " << width << std::endl;
-            throw std::runtime_error( "mapData<N>::set(): X too large for set statement" );
-        }
-        if( Y >= height ) {
-            std::cerr << "Y: " << Y << ", height: " << height << std::endl;
-            throw std::runtime_error( "mapData<N>::set(): Y too large for set statement" );
-        }
-        for( unsigned int i = 0; i < N; i++ ) {
-            pixelArray[ ( X + Y * width ) * N + i ] = data[i];
-        }
+    if( wrapX ) {
+        X = mod( X, width );
+    } else if( X < 0 ) {
+        throw std::runtime_error( "mapData<N>::set(): X smaller than 0 in set statement" );
+    } else if( X >= width ) {
+        throw std::runtime_error( "mapData<N>::set(): X too large for set statement" );
+    }
+
+    if( wrapY ) {
+        Y = mod( Y, height );
+    } else if( Y < 0 ) {
+        throw std::runtime_error( "mapData<N>::set(): Y smaller than 0 in set statement" );
+    } else if( Y >= height ) {
+        throw std::runtime_error( "mapData<N>::set(): Y too large for set statement" );
+    }
+
+    for( unsigned int i = 0; i < N; i++ ) {
+        pixelArray[ ( X + Y * width ) * N + i ] = data[i];
     }
 }
 
@@ -219,7 +232,7 @@ unsigned int mapData<N>::getHeight() const {
 
 template< size_t N >
 unsigned int mapData<N>::getRealWidth() const {
-    if( wrap ) {
+    if( wrapX ) {
         return widthTerm * resolution;
     } else {
         return widthTerm * resolution + 1;
@@ -228,7 +241,7 @@ unsigned int mapData<N>::getRealWidth() const {
 
 template< size_t N >
 unsigned int mapData<N>::getRealHeight() const {
-    if( wrap ) {
+    if( wrapY ) {
         return heightTerm * resolution;
     } else {
         return heightTerm * resolution + 1;
@@ -256,8 +269,13 @@ unsigned int mapData<N>::getResPwr() const {
 }
 
 template< size_t N >
-unsigned int mapData<N>::getWrap() const {
-    return wrap;
+unsigned int mapData<N>::getWrapX() const {
+    return wrapX;
+}
+
+template< size_t N >
+unsigned int mapData<N>::getWrapY() const {
+    return wrapY;
 }
 
 template< size_t N >
