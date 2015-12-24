@@ -17,12 +17,12 @@
 
 solution "mapGen"
     configurations { "Debug", "Release" }
-    project "mapGenCLI"
+    project "mgc"
         kind "ConsoleApp"
         language "C++"
         links { "mapGen", "png" }
         includedirs { "include" }
-        files { "include/**.hpp", "src/cliFrontEnd/**.cpp" }
+        files { "include/**.hpp", "src/mgc/**.cpp" }
         location "build/mapGenCLI"
         configuration "windows"
             -- Windows properties

@@ -32,6 +32,7 @@
 #include <png.h>
 
 // Definition includes
+#include "mgc-opts.hpp"
 #include "mapGenerate.hpp"
 #include "heightNode.hpp"
 #include "mapData.hpp"
@@ -49,59 +50,44 @@ namespace {
     std::vector<biomeNode> biomes;
 }
 
+struct CFG {
+    uint8_t res;
+    uint8_t width;
+    uint8_t height;
+    bool wrap;
+    float randomFactor;
+    std::vector<biomeNode> biomes;
+};
+
 using namespace std;
 
 
-//@ To Do: Get different width and height working!
+//@ To Do: Add seperate width and height wrapping!
+//@ To Do: Improve Option parsing input!
+
+
+//  struct option {
+//      const char *name;       /* name of long option */
+//      int         has_arg;    /* no_argument, required_argument, optional_argument */
+//      int        *flag;       /* If NULL, function returns option otherwise val is loaded into pointer */
+//      int         val;        /* Value to return or to be loaded into flag */
+//  };
+
 
 // Main Function
+
 int main( int argc, char *argv[] ) {
 
-    int count = 1;
-    while( count < argc ) {
-        if( strcmp( argv[count], "--res") == 0 ) {
-            count++;
-            if( count >= argc ) {
-                cerr << "Error: Not enough parameters specified" << endl;
-                return -1;
-            }
-            res = atol( argv[count] );
-        } else if( strcmp( argv[count], "--width" ) == 0 ) {
-            count++;
-            if( count >= argc ) {
-                cerr << "Error: Not enough parameters specified" << endl;
-                return -1;
-            }
-            width = atol( argv[count] );
-        } else if( strcmp( argv[count], "--height" ) == 0 ) {
-            count++;
-            if( count >= argc ) {
-                cerr << "Error: Not enough parameters specified" << endl;
-                return -1;
-            }
-            height = atol( argv[count] );
-        } else if( strcmp( argv[count], "--wrap" ) == 0 ) {
-            count++;
-            if( count >= argc ) {
-                cerr << "Error: Not enough parameters specified" << endl;
-                return -1;
-            }
-            if( strcmp( argv[count], "true" ) == 0 ) {
-                wrap = true;
-            } else {
-                wrap = false;
-            }
-        }
-        count++;
-    }
+    CLI_mapGen_opts opts( argc, argv );
 
     try {
         // Set biomes
         setHeights( biomes );
 
         // Create image
-        monoMapData heightMap( width, height, res, wrap );
-        colourMapData colourMap( width, height, res, wrap );
+        /*
+        monoMapData heightMap( opts.width, opts.height, opts.res, opts.wrap );
+        colourMapData colourMap( opts.width, opts.height, opts.res, opts.wrap );
 
         mapGenerator map;
         
@@ -114,6 +100,7 @@ int main( int argc, char *argv[] ) {
         // Write image
         heightMap.writeImage( "heightMap" );
         colourMap.writeImage( "colourMap" );
+        */
 
         return 0;
     }
