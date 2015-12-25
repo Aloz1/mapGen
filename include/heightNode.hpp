@@ -1,4 +1,4 @@
-// Copyright 2013 Alastair Knowles
+// Copyright (C) 2013-2016 Alastair Knowles
 //
 // This file is part of mapGen.
 //
@@ -18,6 +18,8 @@
 // Include guard
 #ifndef HEIGHT_NODE_HPP
 #define HEIGHT_NODE_HPP
+
+#include <cstdint>
 
 struct biomeNode {
     float height = 0;

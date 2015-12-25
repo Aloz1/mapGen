@@ -1,4 +1,4 @@
-// Copyright 2013 Alastair Knowles
+// Copyright (C) 2013-2016 Alastair Knowles
 //
 // This file is part of mapGen.
 //

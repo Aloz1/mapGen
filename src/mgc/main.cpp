@@ -1,4 +1,4 @@
-// Copyright 2013 Alastair Knowles
+// Copyright (C) 2013-2016 Alastair Knowles
 //
 // This file is part of mapGen.
 //
@@ -16,20 +16,9 @@
 // along with mapGen.  If not, see <http://www.gnu.org/licenses/>.
 
 // Standard C++ includes
-#include <chrono>
 #include <iostream>
 #include <vector>
-#include <random>
 #include <stdexcept>
-
-// Standard C includes
-//#include <cstdlib>
-#include <cstdint>
-#include <cmath>
-#include <cstring>
-
-// Library includes
-#include <png.h>
 
 // Definition includes
 #include "mgc-opts.hpp"
