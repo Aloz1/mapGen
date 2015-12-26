@@ -51,7 +51,7 @@ class mapData {
 
     png_byte colourType;
 
-    void setColourType();
+    inline void setColourType();
 
   public:
     std::array<png_byte, N> get( int X, int Y ) const;
@@ -151,13 +151,13 @@ void mapData<N>::setColourType() {
 
 // Overload colourType to greyscale when using 1 byte
 template<>
-void mapData<1>::setColourType() {
+inline void mapData<1>::setColourType() {
     colourType = PNG_COLOR_TYPE_GRAY;
 }
 
 // Overload colourType to RGB when using 3 bytes
 template<>
-void mapData<3>::setColourType() {
+inline void mapData<3>::setColourType() {
     colourType = PNG_COLOR_TYPE_RGB;
 }
 
